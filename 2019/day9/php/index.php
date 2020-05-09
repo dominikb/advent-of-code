@@ -2,7 +2,7 @@
 
 require_once 'IntcodeVM.php';
 
-$memory = file_get_contents('input.txt');
+$memory = file_get_contents('../input.txt');
 
 $part1 = function() use ($memory) {
     $vm = new IntcodeVM($memory);

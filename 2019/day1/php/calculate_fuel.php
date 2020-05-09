@@ -1,6 +1,6 @@
 <?php
 
-$file = fopen('input.txt', 'r');
+$file = fopen('../input.txt', 'r');
 
 class FuelCalculator {
     public static function calculateFuel($mass) {

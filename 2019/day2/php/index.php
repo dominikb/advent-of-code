@@ -1,8 +1,8 @@
 <?php
 
-include '../IntcodeVM.php';
+include 'IntcodeVM.php';
 
-$initialMemory = @file_get_contents('input.txt');
+$initialMemory = @file_get_contents('../input.txt');
 
 
 for ($noun = 0; $noun < 100; $noun++) {

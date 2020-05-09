@@ -21,7 +21,7 @@ function permutations($range) {
         }
 };
 
-$initialMemory = file_get_contents('input.txt');
+$initialMemory = file_get_contents('../input.txt');
 
 $max = 0;
 $maxPhaseSetting = [];
