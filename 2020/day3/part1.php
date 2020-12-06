@@ -2,7 +2,7 @@
 
 $input = [
   'example.txt', 
-  // 'input.txt'
+  'input.txt'
 ];
 
 foreach($input as $file) {
@@ -17,7 +17,7 @@ foreach($input as $file) {
   while(! isDone($lines, $position)) {
     [$column, $row] = toIndex($lines, $position);
 
-    if ($treeMap[$column][$row])
+    if ($treeMap[$row][$column])
       $treesHit++;
 
     $position = nextPosition($position);
@@ -28,7 +28,7 @@ foreach($input as $file) {
 function isDone($lines, $position) {
   [$x, $y] = $position;
 
-  return $y > count($lines);
+  return $y >= count($lines);
 }
 
 function nextPosition($position) {
@@ -42,7 +42,9 @@ function toIndex($lines, $position) {
 
   [$x, $y] = $position;
 
-  return [$x % $columnWidth, $y];
+  $index = [$x % $columnWidth, $y];
+
+  return $index;
 }
 
 function parseMap($lines) {
