@@ -2,3 +2,5 @@
 _build
 .DS_Store
 .bash_history
+.metals
+.vscode
