@@ -17,14 +17,6 @@ def main() = {
   println()
 }
 
-def countIncreasing(measurements : List[Int]) : Int = {
-  var count = 0
-  for(i <- 1.to(measurements.size - 1))
-    if measurements(i) > measurements(i - 1) then
-      count = count + 1
-  count
-}
-
 def part1(path : String) = {
   
   val input = Source.fromFile(path)
@@ -32,7 +24,11 @@ def part1(path : String) = {
                   .map(line => line.toInt)
                   .toList
 
-  val result = countIncreasing(input)
+  // val result = countIncreasing(input)
+  val result = input.sliding(2).count { 
+    case Seq(a, b) => a < b
+    case _ => false
+  }
   println(result)
 }
 
@@ -42,16 +38,11 @@ def part2(path: String) = {
                   .map(line => line.toInt)
                   .toList
 
-  val slidingWindowSize = 3
-  var slidingWindows = scala.collection.mutable.Map[Int, Int]().withDefault(_ => 0)
-  var slidingWindowIndex = 0;
-  for(i <- 0 to input.length - slidingWindowSize) {
-    for(j <- 0 to slidingWindowSize - 1) {
-      slidingWindows(slidingWindowIndex) = slidingWindows(slidingWindowIndex) + input(i + j)
-    }
-    slidingWindowIndex = slidingWindowIndex + 1
+  val result = input.sliding(3).map(_.sum).sliding(2).count {
+    case Seq(a, b) => a < b
+    case _ => false
   }
-  val result = countIncreasing(slidingWindows.values.toList)
+  
   println(result)
 }
 
