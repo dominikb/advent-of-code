@@ -2,28 +2,32 @@ import scala.io.Source
 import scala.collection.mutable.Map
 
 case class Point(x : Int, y : Int)
-case class Path(start : Point, end : Point)
+case class Path(start : Point, end : Point) {
+  def xStep : Int = if start.x < end.x then 1 else -1
+  def yStep : Int = if start.y < end.y then 1 else -1
+}
 
 def part1(path: String) = {
   val paths = parseInput(path)
 
-  val ground = Map[Point, Int]().withDefault(_ => 0)
-  for(point <- paths.flatMap(pointsInStraightPath))
-    ground(point) = ground(point) + 1
+  val solution = paths
+    .flatMap(pointsInStraightPath)
+    .groupMapReduce(identity)(_ => 1)(_ + _)
+    .values.count(_ > 1)
 
-  println(ground.values.count(_ > 1))
+  println(solution)
 }
 
 def part2(path: String) = {
   val paths = parseInput(path)
 
-  val ground = Map[Point, Int]().withDefault(_ => 0)
-  val points = paths.flatMap(pointsInStraightPath)
-            ++ paths.flatMap(pointsInDiagonalPath)
-  for(point <- points)
-    ground(point) = ground(point) + 1
+  val solution = paths
+    .flatMap(pointsInStraightPath)
+    .appendedAll(paths.flatMap(pointsInDiagonalPath))
+    .groupMapReduce(identity)(_ => 1)(_ + _)
+    .values.count(_ > 1)
   
-  println(ground.values.count(_ > 1))
+  println(solution)
 }
 
 def isDiagonal(p : Path) =
@@ -35,20 +39,8 @@ def pointsInStraightPath(p : Path) : Seq[Point] = {
   if ! isStraight(p) then
     return Seq()
     
-  val xRange = 
-    if p.start.x < p.end.x then
-      p.start.x to p.end.x
-    else
-      p.end.x to p.start.x
-
-  val yRange = 
-    if p.start.y < p.end.y then
-      p.start.y to p.end.y
-    else
-      p.end.y to p.start.y
-
-  if p.start.x != p.end.x && p.start.y != p.end.y then
-    return Seq()
+  val xRange = p.start.x to p.end.x by p.xStep
+  val yRange = p.start.y to p.end.y by p.yStep
 
   for(x <- xRange; y <- yRange)
     yield Point(x, y)
@@ -58,12 +50,8 @@ def pointsInDiagonalPath(p: Path) : Seq[Point] = {
   if ! isDiagonal(p) then
     return Seq()
 
-  val deltaX = if p.start.x < p.end.x then 1 else -1
-  val deltaY = if p.start.y < p.end.y then 1 else -1
-  val distance = Math.abs(p.start.x - p.end.x)
-
-  for(steps <- 0 to distance)
-    yield Point(p.start.x + steps * deltaX, p.start.y + steps * deltaY)
+  for(steps <- 0 to Math.abs(p.start.x - p.end.x))
+    yield Point(p.start.x + steps * p.xStep, p.start.y + steps * p.yStep)
 }
 
 val linePattern = "(\\d+),(\\d+) -> (\\d+),(\\d+)".r
