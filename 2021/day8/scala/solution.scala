@@ -56,36 +56,11 @@ def combine(a: List[Char], b : List[Char]) =
     perm <- permList(b.toList)
   } yield combine(a.toList, perm)
 
-def possibleMappings(wires: List[Char], mappings: Map[Char, Char]) = 
-  possibleDigits(wires)
-    .map(wiresPerDigit(_))
-    .flatMap(digitWires => {
-      combine(wires, digitWires).map(it => {
-        it.groupBy(_._1).map(it => (it._2)(0)) ++ mappings
-      })
-    })
-    // Filter duplicates
-    .filter(mapping => mapping.values.toSet.size == mapping.size)
-    .toSet
-
-def decodable(wires : List[Char], mappings: Map[Char, Char]) =
-  wires.forall(w => mappings.keySet.contains(w))
-
 def toDigit(wires: List[Char], mappings: Map[Char, Char]) : Option[Int] =
   val mappedWires = wires.map(mappings(_)).sorted
   wiresPerDigit.filter((k,v) => v == mappedWires).keys.toList match
     case List(digit) => Some(digit)
     case _ => None
-
-def possibleDigits(wires: List[Char]) : List[Int] = {
-  wires.length match
-    case 2 => List(1)
-    case 3 => List(7)
-    case 4 => List(4)
-    case 5 => List(2, 3, 5)
-    case 6 => List(0, 6, 9)
-    case 7 => List(8)
-}
 
 def wiresPerDigit = Map(
   0 -> "abcefg",
