@@ -4,7 +4,6 @@ include Aoc
 
 input = get_input(year:, day:)
 example = <<~EXAMPLE
-acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf
 EXAMPLE
 example = example.split("\n").map(&:strip)
 
