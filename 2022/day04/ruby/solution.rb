@@ -1,14 +1,6 @@
-require_relative '../../aoc'
+require_relative '../../../utils/ruby/Aoc'
 
-include Aoc
-
-class Range
-  def overlaps?(other)
-    cover?(other.first) || other.cover?(first)
-  end
-end
-
-input = get_input(year: 2022, day: 4)
+input = Aoc.get_input(year: 2022, day: 4)
 example = <<~EXAMPLE
 2-4,6-8
 2-3,4-5
@@ -19,6 +11,7 @@ example = <<~EXAMPLE
 EXAMPLE
 example = example.split("\n").map(&:strip)
 
+def parse_line(l) = l.integers.each_slice(2).map { Range.new(*_1) }
 def part1(input)
   input
     .map { |line| line.match(%r|(\d+)-(\d+),(\d+)-(\d+)|)
@@ -29,9 +22,11 @@ end
 
 def part2(input)
   input
-    .map { |line| line.match(%r|(\d+)-(\d+),(\d+)-(\d+)|)
-                      .captures.map(&:to_i)
-                      .each_slice(2).map { Range.new(*_1) } }
+    .map(&method(:parse_line))
+    # .map { |line| line.tr('^0-9', ' ').split(' ').map(&:to_i).each_slice(2).map { Range.new(*_1)} }
+    # .map { |line| line.match(%r|(\d+)-(\d+),(\d+)-(\d+)|)
+    #                   .captures.map(&:to_i)
+    #                   .each_slice(2).map { Range.new(*_1) } }
     .count { _1.overlaps?(_2) }
 end
 

@@ -1,8 +1,6 @@
-require_relative '../../aoc'
+require_relative '../../../utils/ruby/Aoc'
 
-include Aoc
-
-input = get_input(year:, day:)
+input = Aoc.get_input(year:, day:)
 example = <<~EXAMPLE
 EXAMPLE
 example = example.split("\n").map(&:strip)

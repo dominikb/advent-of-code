@@ -1,29 +1,21 @@
-require_relative '../../aoc'
-require_relative '../../EnumerableExtensions'
+require_relative '../../../utils/ruby/Aoc'
 
-include Aoc
-
-input = get_input(year: 2022, day: 5, strip: false)
+input = Aoc.get_input(year: 2022, day: 5, strip: false)
 example = <<~EXAMPLE
-      [D]    
-  [N] [C]    
-  [Z] [M] [P]
-   1   2   3 
+    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
 
-  move 1 from 2 to 1
-  move 3 from 1 to 3
-  move 2 from 2 to 1
-  move 1 from 1 to 2
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2
 EXAMPLE
-example = example.split("\n")#.map(&:strip)
+example = example.split("\n")
 
-class String
-  def integers
-    self.tr('^0-9', ' ').split(' ').map(&:strip).reject(&:nil?).map(&:to_i)
-  end
-end
 def part1(input)
-  crates_input, moves_input = input.chunk_by { _1 == "\n" || _1 == '' }
+  crates_input, moves_input = input.chunk_by(["\n", ''])
 
   stacked = Hash.new { |h,k| h[k] = [] }
   crates_input
@@ -36,7 +28,7 @@ def part1(input)
       end
   end
 
-  moves_input.drop(1).map(&:integers).each do |n, from, to|
+  moves_input.map(&:integers).each do |n, from, to|
     n.times do
       stacked[to] << stacked[from].pop
     end
@@ -46,7 +38,7 @@ def part1(input)
 end
 
 def part2(input)
-  crates_input, moves_input = input.chunk_by { _1 == "\n" || _1 == '' }
+  crates_input, moves_input = input.chunk_by(["\n", ''])
 
   stacked = Hash.new { |h,k| h[k] = [] }
   crates_input
@@ -59,7 +51,7 @@ def part2(input)
     end
   end
 
-  moves_input.drop(1).map(&:integers).each do |n, from, to|
+  moves_input.map(&:integers).each do |n, from, to|
     moving = []
     n.times { moving << stacked[from].pop }
     moving.reverse.each { stacked[to] << _1 }

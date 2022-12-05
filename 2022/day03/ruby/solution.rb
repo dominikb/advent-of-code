@@ -1,8 +1,6 @@
-require_relative '../../aoc'
+require_relative '../../../utils/ruby/Aoc'
 
-include Aoc
-
-input = get_input(year: 2022, day: 3)
+input = Aoc.get_input(year: 2022, day: 3)
 example = <<~EXAMPLE
 vJrwpWtwJgWrhcsFMMfFFhFp
 jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL

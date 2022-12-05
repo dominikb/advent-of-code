@@ -1,9 +1,6 @@
-require_relative '../../aoc'
-require_relative '../../EnumerableExtensions'
+require_relative '../../../utils/ruby/Aoc'
 
-include Aoc
-
-input = get_input(year: 2022, day: 1)
+input = Aoc.get_input(year: 2022, day: 1)
 example = <<~EXAMPLE
   1000
   2000
