@@ -44,73 +44,48 @@ class MyDir
     children.map(&:size).sum +
       files.map { _1[:size] }.sum
   end
+
+  def to_s
+    prefix = (path.size - 1).times.map { '  ' }.join('') + '- '
+    cur =  prefix + path.last + ' (dir)'
+    dirs = children.map(&:to_s).join("\n")
+    fs = files.map { '  ' + prefix + _1[:name] + ' (file, size=' + _1[:size].to_s + ')' }.join("\n")
+    [cur, dirs, fs].reject { _1.strip.empty? }.join("\n")
+  end
 end
 
-def part1(input)
+def parse_directories(input)
   current_path = []
 
   fs = Hash.new { _1[_2] = MyDir.new(_2) }
 
   input.each do |line|
-    if line.start_with?('$')
-      if match_data = line.match(%r|\$ cd (\S+)|)
-        case match_data.captures.first
-        in '..' then current_path.pop
-        in dir then current_path << dir
-        end
-      end
-    else
-      case line
-      in %r|dir (\S+)|
-        subdirectory = line.split(' ').second
-        fs[current_path].children << fs[current_path + [subdirectory]]
-      in %r|(\d+) (\S+)|
-        size, name = line.split(' ')
-        fs[current_path].files << { name:, size: size.to_i }
-      else
-        nil
-      end
+    case line.split(' ')
+    in '$', 'cd', '..' then current_path = current_path[...-1]
+    in '$', 'cd', dir then current_path += [dir]
+    in '$', 'ls' then nil
+    in 'dir', dir_name then fs[current_path].children << fs[current_path + [dir_name]]
+    in size, name then fs[current_path].files << { size: size.to_i, name: }
     end
   end
+
+  fs
+end
+
+def part1(input)
+  fs = parse_directories(input)
 
   fs.values.map(&:size).filter { _1 < 100_000 }.sum
 end
 
 def part2(input)
-  current_path = []
-  p = -> (cur) { cur.size == 1 ? '/' : '/' + cur[1..].join('/') }
-
-  fs = Hash.new { _1[_2] = MyDir.new(_2) }
-
-  input.each do |line|
-    if line.start_with?('$')
-      if match_data = line.match(%r|\$ cd (\S+)|)
-        case match_data.captures.first
-        in '..' then current_path.pop
-        in dir then current_path << dir
-        end
-      end
-    else
-      case line
-      in %r|dir (\S+)|
-        subdirectory = fs[p.(current_path + [line.split(' ').second])]
-        fs[p.(current_path)].children << subdirectory
-      in %r|(\d+) (\S+)|
-        size, name = line.split(' ')
-        fs[p.(current_path)].files << { name:, size: size.to_i }
-      else
-        nil
-      end
-    end
-  end
+  fs = parse_directories(input)
 
   total = 70_000_000
   required = 30_000_000
-  used = fs.fetch('/').size
+  used = fs[['/']].size
   to_free = used - (total - required)
-  fs
-    .filter { |path, dir| dir.size >= to_free }
-    .min_by { |path, dir| dir.size }[1].size
+  fs.values.map(&:size).filter { _1 >= to_free }.min
 end
 
 puts "Part 1 (Example): #{part1(example)}"

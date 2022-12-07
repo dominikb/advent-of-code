@@ -12,21 +12,16 @@ EXAMPLE
 example = example.split("\n").map(&:strip)
 
 def parse_line(l) = l.integers.each_slice(2).map { Range.new(*_1) }
+
 def part1(input)
   input
-    .map { |line| line.match(%r|(\d+)-(\d+),(\d+)-(\d+)|)
-                      .captures.map(&:to_i)
-                      .each_slice(2).map { Range.new(*_1) } }
+    .map { parse_line(_1) }
     .count { _1.cover?(_2) || _2.cover?(_1) }
 end
 
 def part2(input)
   input
-    .map(&method(:parse_line))
-    # .map { |line| line.tr('^0-9', ' ').split(' ').map(&:to_i).each_slice(2).map { Range.new(*_1)} }
-    # .map { |line| line.match(%r|(\d+)-(\d+),(\d+)-(\d+)|)
-    #                   .captures.map(&:to_i)
-    #                   .each_slice(2).map { Range.new(*_1) } }
+    .map { parse_line(_1) }
     .count { _1.overlaps?(_2) }
 end
 
