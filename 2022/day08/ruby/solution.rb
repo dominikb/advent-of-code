@@ -4,62 +4,48 @@ require_relative '../../../utils/ruby/Aoc'
 
 input = Aoc.get_input(year: 2022, day: 8)
 example = <<~EXAMPLE
-30373
-25512
-65332
-33549
-35390
+  30373
+  25512
+  65332
+  33549
+  35390
 EXAMPLE
 example = example.split("\n")
-
 
 def part1(input)
   rows = input.map { _1.split('').map(&:to_i) }
   columns = rows.transpose
+  grid = rows.transpose
 
-  grid = rows
-  counting_grid = grid.map { _1.clone }
-
-  count = 0
-  grid.each.with_index do |row, row_index|
-    row.each.with_index do |t, col_index|
-      top = (columns[col_index][0...row_index].max || -1) < t
-      bottom = (columns[col_index][row_index+1..].max || -1) < t
-      left = (row[0...col_index].max || -1) < t
-      right = (row[col_index+1..].max || -1) < t
-      count += 1 if [top, bottom, left, right].any?
-      counting_grid[row_index][col_index] = 'x' if [top, bottom, left, right].any?
-    end
+  (0...columns.size).product(0...rows.size).count do |x, y|
+    tree = grid[x][y]
+    rows[y][x + 1..].all? { _1 < tree } ||
+      rows[y][...x].all? { _1 < tree } ||
+      columns[x][...y].all? { _1 < tree } ||
+      columns[x][y + 1..].all? { _1 < tree }
   end
-  count
 end
 
 def part2(input)
   rows = input.map { _1.split('').map(&:to_i) }
   columns = rows.transpose
+  grid = rows.transpose
 
-  grid = rows
-  viewing_distances = grid.map { _1.clone }
-
-  grid.each.with_index do |row, row_index|
-    row.each.with_index do |t, col_index|
-      c = ->(trees) do
-        blocked = false
-        trees.take_while do
-          take = t >= 1 && (not blocked)
-          blocked = _1 >= t || blocked
-          take
-        end.count
-      end
-      top = c.(columns[col_index][...row_index].reverse)
-      bottom = c.(columns[col_index][row_index+1..])
-      left = c.(row[...col_index].reverse)
-      right = c.(row[col_index+1..])
-
-      viewing_distances[row_index][col_index] = left * right * top * bottom
+  dist = lambda do |trees, t|
+    case trees.find_index { _1 >= t }
+    in nil then trees.size
+    in idx then idx + 1
     end
   end
-  viewing_distances.flatten.max
+
+  (0...columns.size).product(0...rows.size).map do |x, y|
+    tree = grid[x][y]
+    top = dist.call(columns[x][0...y].reverse, tree)
+    bottom = dist.call(columns[x][y + 1..], tree)
+    left = dist.call(rows[y][0...x].reverse, tree)
+    right = dist.call(rows[y][x + 1..], tree)
+    top * bottom * left * right
+  end.max
 end
 
 puts "Part 1 (Example): #{part1(example)}"
