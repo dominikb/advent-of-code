@@ -1,9 +1,11 @@
 require_relative 'StringExtensions'
 require_relative 'EnumerableExtensions'
 require_relative 'RangeExtensions'
+require_relative 'ArrayExtensions'
 
 require 'net/http'
 require 'tmpdir'
+require 'set'
 
 module Aoc
 
