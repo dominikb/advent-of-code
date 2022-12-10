@@ -156,9 +156,9 @@ example = example.split("\n")
 class Clock
   attr_reader :value
 
-  def initialize(consumers = [])
+  def initialize(*consumers)
     @value = 0
-    @consumers = []
+    @consumers = consumers
   end
 
   def add_consumer(consumer)
@@ -175,17 +175,12 @@ class CPU
   attr_reader :x, :instructions
 
   def initialize(instructions)
-    @original_instructions = instructions
     @instructions = instructions.clone
     @x = 1
     @instruction_cycle_count = 0
   end
 
-  def do_cycle
-    if @instructions.empty?
-      @instructions = @original_instructions.clone
-    end
-
+  def do_cycle(*)
     case @instructions.first.split(' ')
     in ['noop']
       @instructions.shift
@@ -200,10 +195,27 @@ class CPU
   end
 end
 
+class CRT
+  def initialize(cpu)
+    @cpu = cpu
+    @screen = 6.times.map { 40.times.map { '.' } }
+  end
+
+  def do_cycle(clock)
+    row = clock.value.div(40)
+    col = clock.value.modulo(40)
+
+    @screen[row][col] = '#' if (col - 1..col + 1).include?(@cpu.x)
+  end
+
+  def to_s
+    @screen.map { _1.join('') }.join("\n")
+  end
+end
+
 def part1(input)
-  clock = Clock.new
   cpu = CPU.new(input)
-  clock.add_consumer(cpu)
+  clock = Clock.new(cpu)
 
   (20..220).step(40).map do |target_cycle|
     (target_cycle - 1 - clock.value).times { clock.do_cycle }
@@ -212,18 +224,13 @@ def part1(input)
 end
 
 def part2(input)
-  clock = Clock.new
   cpu = CPU.new(input)
-  clock.add_consumer(cpu)
+  crt = CRT.new(cpu)
+  clock = Clock.new(crt, cpu)
 
-  until clock.value >= 240 do
-    puts if clock.value.modulo(40).zero?
+  clock.do_cycle until cpu.instructions.empty?
 
-    visible = (clock.value.modulo(40) - 1..clock.value.modulo(40) + 1).include?(cpu.x)
-    print("#{visible ? '#' : '.'}")
-    clock.do_cycle
-  end
-  puts
+  puts crt.to_s
 end
 
 puts "Part 1 (Example): #{part1(example)}"
