@@ -4,33 +4,33 @@ require_relative '../../../utils/ruby/Aoc'
 
 input = Aoc.get_input(year: 2022, day: 11)
 example = <<~EXAMPLE
-  Monkey 0:
-    Starting items: 79, 98
-    Operation: new = old * 19
-    Test: divisible by 23
-      If true: throw to monkey 2
-      If false: throw to monkey 3
+Monkey 0:
+  Starting items: 79, 98
+  Operation: new = old * 19
+  Test: divisible by 23
+    If true: throw to monkey 2
+    If false: throw to monkey 3
 
-  Monkey 1:
-    Starting items: 54, 65, 75, 74
-    Operation: new = old + 6
-    Test: divisible by 19
-      If true: throw to monkey 2
-      If false: throw to monkey 0
+Monkey 1:
+  Starting items: 54, 65, 75, 74
+  Operation: new = old + 6
+  Test: divisible by 19
+    If true: throw to monkey 2
+    If false: throw to monkey 0
 
-  Monkey 2:
-    Starting items: 79, 60, 97
-    Operation: new = old * old
-    Test: divisible by 13
-      If true: throw to monkey 1
-      If false: throw to monkey 3
+Monkey 2:
+  Starting items: 79, 60, 97
+  Operation: new = old * old
+  Test: divisible by 13
+    If true: throw to monkey 1
+    If false: throw to monkey 3
 
-  Monkey 3:
-    Starting items: 74
-    Operation: new = old + 3
-    Test: divisible by 17
-      If true: throw to monkey 0
-      If false: throw to monkey 1
+Monkey 3:
+  Starting items: 74
+  Operation: new = old + 3
+  Test: divisible by 17
+    If true: throw to monkey 0
+    If false: throw to monkey 1
 EXAMPLE
 example = example.split("\n")
 
@@ -66,21 +66,21 @@ def turn(n, monkeys, prod_of_divisors)
 end
 
 def round(monkeys, prod_of_divisors)
-  monkeys.keys.sort.each { |n| turn(n, monkeys, prod_of_divisors) }
+  monkeys.each.with_index { |_, idx| turn(idx, monkeys, prod_of_divisors) }
 end
 
 def part1(input)
-  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }.index_by { _1[:n] }
-  prod_of_divisors = monkeys.values.map { _1[:divisor] }.reduce(&:*)
+  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }
+  prod_of_divisors = monkeys.map { _1[:divisor] }.reduce(&:*)
   20.times { round(monkeys, prod_of_divisors) }
-  monkeys.values.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
+  monkeys.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
 end
 
 def part2(input)
-  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }.index_by { _1[:n] }
-  prod_of_divisors = monkeys.values.map { _1[:divisor] }.reduce(&:*)
+  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }
+  prod_of_divisors = monkeys.map { _1[:divisor] }.reduce(&:*)
   10_000.times { round(monkeys, prod_of_divisors) }
-  monkeys.values.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
+  monkeys.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
 end
 
 puts "Part 1 (Example): #{part1(example)}"
