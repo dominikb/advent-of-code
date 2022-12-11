@@ -1,6 +1,17 @@
 # frozen_string_literal: true
 
 module Enumerable
+  # File activesupport/lib/active_support/core_ext/enumerable.rb, line 103
+  def index_by
+    if block_given?
+      result = {}
+      each { |elem| result[yield(elem)] = elem }
+      result
+    else
+      to_enum(:index_by) { size if respond_to?(:size) }
+    end
+  end
+
   def chunk_by(separator = nil, keep_separator: false, &block)
     should_chunk =
       case separator

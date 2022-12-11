@@ -34,7 +34,7 @@ example = <<~EXAMPLE
 EXAMPLE
 example = example.split("\n")
 
-def parse_monkey(monkey_input, level)
+def parse_monkey(monkey_input)
   n = monkey_input[0].integers.first
   items = monkey_input[1].integers
   op =
@@ -53,41 +53,33 @@ end
 
 def turn(n, monkeys, prod_of_divisors)
   active_monkey = monkeys[n]
-  active_monkey[:inspect_count] += active_monkey[:items].size
   active_monkey[:items].each do |item|
-    new_item = active_monkey[:op].call(item)
-    new_item = new_item.modulo(prod_of_divisors)
-    if new_item.modulo(active_monkey[:divisor]) == 0
+    new_item = active_monkey[:op].call(item).modulo(prod_of_divisors)
+    if new_item.modulo(active_monkey[:divisor]).zero?
       monkeys[active_monkey[:true_target]][:items] << new_item
     else
       monkeys[active_monkey[:false_target]][:items] << new_item
     end
   end
+  active_monkey[:inspect_count] += active_monkey[:items].size
   active_monkey[:items] = []
 end
 
-def round(monkeys)
-  prod_of_divisors = monkeys.values.map { _1[:divisor] }.reduce(&:*)
-  monkeys.keys.sort.each do |n|
-    turn(n, monkeys, prod_of_divisors)
-  end
-end
-
-def monkey_print(monkeys)
-  monkeys.map do |i, m|
-    "Monkey #{m[:n]}: #{m[:items].join(', ')}"
-  end.join("\n")
+def round(monkeys, prod_of_divisors)
+  monkeys.keys.sort.each { |n| turn(n, monkeys, prod_of_divisors) }
 end
 
 def part1(input)
-  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1, 1) }.map { [_1[:n], _1] }.to_h
-  20.times { round(monkeys) }
+  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }.index_by { _1[:n] }
+  prod_of_divisors = monkeys.values.map { _1[:divisor] }.reduce(&:*)
+  20.times { round(monkeys, prod_of_divisors) }
   monkeys.values.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
 end
 
 def part2(input)
-  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1, 2) }.map { [_1[:n], _1] }.to_h
-  10_000.times { round(monkeys) }
+  monkeys = input.chunk_by(["\n", ""]).map { parse_monkey(_1) }.index_by { _1[:n] }
+  prod_of_divisors = monkeys.values.map { _1[:divisor] }.reduce(&:*)
+  10_000.times { round(monkeys, prod_of_divisors) }
   monkeys.values.map { _1[:inspect_count] }.sort.reverse.take(2).reduce(&:*)
 end
 
