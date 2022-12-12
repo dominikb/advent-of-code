@@ -33,8 +33,7 @@ def possible_moves(grid, distances, (from_y, from_x))
   end
 end
 
-
-def part1(input)
+def build_distance_map(input)
   grid = input.map { |row| row.split('').map { mapping[_1] } }
   distance_map = grid.map { _1.map { MAX_DISTANCE } }
 
@@ -52,6 +51,11 @@ def part1(input)
       distance_map[y][x] = distance_map[cur_y][cur_x] + 1
     end
   end
+  distance_map
+end
+
+def part1(input)
+  distance_map = build_distance_map(input)
 
   start_y = input.find_index { _1.include?('S') }
   start_x = input[start_y].index('S')
@@ -59,28 +63,13 @@ def part1(input)
 end
 
 def part2(input)
-  grid = input.map { |row| row.split('').map { mapping[_1] } }
-  distance_map = grid.map { _1.map { MAX_DISTANCE } }
+  distance_map = build_distance_map(input)
 
-  end_y = input.find_index { _1.include?('E') }
-  end_x = input[end_y].index('E')
-
-  distance_map[end_y][end_x] = 0
-
-  queue = [[end_y, end_x]]
-  until queue.empty?
-    (cur_y, cur_x) = cur = queue.shift
-    neighbours = possible_moves(grid, distance_map, cur)
-    queue += neighbours
-    neighbours.each do |(y, x)|
-      distance_map[y][x] = distance_map[cur_y][cur_x] + 1
-    end
-  end
-
-  (0...grid.size).product(0...grid[0].size).filter_map do |(y, x)|
-    next unless grid[y][x] == 0
-    distance_map[y][x]
-  end.min
+  (0...input.size)
+    .product(0...input[0].size)
+    .filter { 'aS'.include?(input[_1][_2]) }
+    .map { distance_map[_1][_2] }
+    .min
 end
 
 puts "Part 1 (Example): #{part1(example)}"
