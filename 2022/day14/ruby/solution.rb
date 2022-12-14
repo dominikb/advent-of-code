@@ -22,11 +22,8 @@ def rocks(line)
   end
 end
 
-def fall((sand_x, sand_y), grid, max_y, part2 = false)
-  return :void if sand_y + 1 > max_y && !part2
-
-  next_row = grid[sand_y + 1].dup
-  next_row[sand_x] = "[#{next_row[sand_x]}]"
+def fall((sand_x, sand_y), grid, part2 = false)
+  return :void if sand_y + 1 >= grid.size && !part2
 
   return [sand_x, sand_y + 1] if grid[sand_y + 1][sand_x] == '.'
   return [sand_x - 1, sand_y + 1] if grid[sand_y + 1][sand_x - 1] == '.'
@@ -37,64 +34,48 @@ end
 
 def part1(input)
   rocks = input.flat_map { rocks(_1) }.to_a
-  x_min, x_max = rocks.map(&:first).minmax
-  y_min, y_max = rocks.map(&:second).minmax
-  sand_source = [500 - x_min, 0]
-  rocks = rocks.map { |(x, y)| [x - x_min, y] }
-  grid = (0..y_max).map do |y|
-    (x_min..x_max).map { |x| '.' }
-  end
+  x_max = rocks.map(&:first).max
+  y_max = rocks.map(&:second).max
+  grid = (0..y_max).map { (0..x_max).map { '.' } }
   rocks.each { |(x, y)| grid[y][x] = '#' }
-  grid[sand_source.second][sand_source.first] = '*'
 
-  sand = sand_source
+  sand = [500, 0]
   loop do
     sand_x, sand_y = sand
-    case (falling = fall(sand, grid, y_max))
+    case fall(sand, grid)
     in :stop
       grid[sand_y][sand_x] = 'o'
-      sand = sand_source
+      sand = [500, 0]
     in :void then break
-    in [x, y] then
-      sand = [x, y]
+    in [x, y] then sand = [x, y]
     end
   end
 
-  "\n" + grid.map { _1.join('') }.join("\n")
   grid.flatten.count { _1 == 'o' }
 end
 
 def part2(input)
   rocks = input.flat_map { rocks(_1) }.to_a
-  x_min, x_max = rocks.map(&:first).minmax
-  y_min, y_max = rocks.map(&:second).minmax
-  sand_source = [500, 0]
-  # rocks = rocks.map { |(x, y)| [x - x_min, y] }
-  floor = (0...1_000).map { [_1, y_max + 2] }
+  y_max = rocks.map(&:second).max
+  floor_width = 1000
+  floor = rocks("0,#{y_max + 2} -> #{floor_width},#{y_max + 2}")
   rocks += floor
-  grid = (0..(y_max+2)).map do |y|
-    (0..1_000).map { |x| '.' }
-  end
-  floor = (0...10000).map { [_1, y_max + 2] }
-  rocks += floor
+  grid = (0..(y_max + 2)).map { (0..floor_width).map { '.' } }
   rocks.each { |(x, y)| grid[y][x] = '#' }
-  grid[sand_source.second][sand_source.first] = '*'
 
-  sand = sand_source
+  sand = [500, 0]
   loop do
     sand_x, sand_y = sand
-    case (falling = fall(sand, grid, y_max + 2))
-    in :stop
-      grid[sand_y][sand_x] = 'o'
-      break if sand == sand_source
-      sand = sand_source
+    case fall(sand, grid)
     in :void then break
-    in [x, y] then
-      sand = [x, y]
+    in [x, y] then sand = [x, y]
+    in :stop then
+      grid[sand_y][sand_x] = 'o'
+      break if sand == [500, 0]
+      sand = [500, 0]
     end
   end
 
-  "\n" + grid.map { _1.join('') }.join("\n")
   grid.flatten.count { _1 == 'o' }
 end
 
