@@ -16,3 +16,11 @@ key.pop
 hash[[1, 2]] # => nil
 hash # => {[1]=>1}
 ````
+
+### Day 14
+Ranges can be used for accessing multiple array elements except for when they use a negative starting value.
+````ruby
+arr = [1, 2, 3, 4, 5]
+arr[1..2] # => [2, 3]
+arr[-1..2] # => []
+````
