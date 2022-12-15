@@ -27,43 +27,27 @@ def points_within((x, y), dist)
   end + [[x, y]]
 end
 
+def dist(x1, y1, x2, y2)
+  (x1 - x2).abs + (y1 - y2).abs
+end
+
 # Should be 5142231
-def part1(input)
+def part1(input, y:)
   signals = input.map(&:integers).map { _1.take(2) }
   beacons = input.map(&:integers).map { _1.drop(2) }
-  # input
-  #   .map(&:integers)
-  #   .map { |sx, sy, bx, by| [sx, sy, (sx - bx).abs + (sy - by).abs] }
-  #   .flat_map.with_index { |(sx, sy, dist), idx| points_within([sx, sy], dist) }
-  #   .each { grid[_1] = 1 }
 
-  # max_x = grid.keys.map(&:second).max
-  # max_y = grid.keys.map(&:first).max
-
-  # puts
-  # for y in -10..30
-  #   for x in -3..25
-  #     next print('S') if signals.include?([x, y])
-  #     next print('B') if beacons.include?([x, y])
-  #     # print('.')
-  #     print(grid.key?([x, y]) ? '#' : '.')
-  #   end
-  #   puts
-  # end
-  # grid.keys.filter { _1.second == 10 }.count
-
-  signals_with_dist = signals.zip(beacons).map do |(sx,sy),(bx,by)|
-    [sx, sy, ((sx - bx).abs + (sy - by).abs)]
+  signals_with_dist = signals.zip(beacons).map do |(sx, sy), (bx, by)|
+    [sx, sy, dist(sx, sy, bx, by)]
   end
+
   x_from = signals_with_dist.map { |sx, _sy, dist| sx - dist }.min
   x_to = signals_with_dist.map { |sx, _sy, dist| sx + dist }.max
 
   beacons_set = Set.new(beacons)
-  y = 2_000_000
-  puts "x #{x_from}..#{x_to}"
-  (x_from..x_to).count do |x|
-    signals_with_dist.any? do |sx, sy, dist|
-      ((x - sx).abs + (y - sy).abs) <= dist && !beacons_set.include?([sx, sy])
+
+  (x_from-1..x_to+1).count do |x|
+    signals_with_dist.any? do |sx, sy, dist_to_beacon|
+      dist(x, y, sx, sy) <= dist_to_beacon && !beacons_set.include?([x, y])
     end
   end
 end
@@ -98,7 +82,7 @@ def part2(input)
   # grid.keys.filter { _1.second == 10 }.count
 end
 
-# puts "Part 1 (Example): #{part1(example)}"
-# puts "Part 1: #{part1(input)}"
-puts "Part 2 (Example): #{part2(example)}"
+puts "Part 1 (Example): #{part1(example, y: 10)}"
+puts "Part 1: #{part1(input, y: 2_000_000)}"
+# puts "Part 2 (Example): #{part2(example)}"
 # puts "Part 2: #{part2(input)}"
