@@ -21,17 +21,10 @@ example = <<~EXAMPLE
 EXAMPLE
 example = example.split("\n")
 
-def points_within((x, y), dist)
-  ((x - dist)..(x + dist)).product((y - dist)..(y + dist)).filter_map do |xd, yd|
-    [xd, yd] if ((x - xd).abs + (y - yd).abs) < dist
-  end + [[x, y]]
-end
-
 def dist(x1, y1, x2, y2)
   (x1 - x2).abs + (y1 - y2).abs
 end
 
-# Should be 5142231
 def part1(input, y:)
   signals = input.map(&:integers).map { _1.take(2) }
   beacons = input.map(&:integers).map { _1.drop(2) }
@@ -45,44 +38,58 @@ def part1(input, y:)
 
   beacons_set = Set.new(beacons)
 
-  (x_from-1..x_to+1).count do |x|
+  (x_from..x_to).count do |x|
     signals_with_dist.any? do |sx, sy, dist_to_beacon|
       dist(x, y, sx, sy) <= dist_to_beacon && !beacons_set.include?([x, y])
     end
   end
 end
 
-def part2(input)
+def part1b(input, y:)
+  target_y = y
   signals = input.map(&:integers).map { _1.take(2) }
   beacons = input.map(&:integers).map { _1.drop(2) }
 
-  distress_x = 0..20
-  distress_y = 0..20
-
-  grid = {}
-  input
-    .map(&:integers)
-    .map { |sx, sy, bx, by| [sx, sy, (sx - bx).abs + (sy - by).abs] }
-    .flat_map { |sx, sy, dist| points_within([sx, sy], dist) }
-    .each { grid[_1] = 1 }
-
-  # max_x = grid.keys.map(&:second).max
-  # max_y = grid.keys.map(&:first).max
-
-  puts
-  for y in distress_y
-    for x in distress_x
-      next print('S') if signals.include?([x, y])
-      next print('B') if beacons.include?([x, y])
-      # print('.')
-      print(grid.key?([x, y]) ? '#' : '.')
-    end
-    puts
+  signals_with_dist = signals.zip(beacons).map do |(sx, sy), (bx, by)|
+    [[sx, sy], dist(sx, sy, bx, by)]
   end
-  # grid.keys.filter { _1.second == 10 }.count
+
+  rows = signals_with_dist.each_with_object(Hash.new { _1[_2] = SparseRange.new }) do |((sx, sy), dist), agg|
+    (0..dist).each do |d|
+      y = sy + (dist - d)
+      agg[y].add (sx - d)..(sx + d) if y == target_y
+      y = sy - (dist - d)
+      agg[y].add (sx - d)..(sx + d) if y == target_y
+    end
+  end
+
+  (rows[target_y].to_a - beacons.filter { _1.second == target_y }.map(&:first)).size
+end
+
+def part2(input, distress_limit:)
+  signals = input.map(&:integers).map { _1.take(2) }
+  beacons = input.map(&:integers).map { _1.drop(2) }
+
+  signals_with_dist = signals.zip(beacons).map do |(sx, sy), (bx, by)|
+    [[sx, sy], dist(sx, sy, bx, by)]
+  end
+  rows = signals_with_dist.each_with_object(Hash.new { _1[_2] = SparseRange.new }) do |((sx, sy), dist), agg|
+    (0..dist).each do |d|
+      agg[sy + (dist - d)].add((sx - d)..(sx + d))
+      agg[sy - (dist - d)].add((sx - d)..(sx + d))
+    end
+  end
+
+  relevant_row = (0..distress_limit)
+  remaining = rows
+    .filter { |k, v| relevant_row.cover?(k) }
+    .reject { |k, v| v.cover?(relevant_row) }
+
+  y, x = remaining.transform_values { _1.gap.to_a.first }.entries.first
+  return [[x,y], x * 4000000 + y]
 end
 
 puts "Part 1 (Example): #{part1(example, y: 10)}"
-puts "Part 1: #{part1(input, y: 2_000_000)}"
-# puts "Part 2 (Example): #{part2(example)}"
-# puts "Part 2: #{part2(input)}"
+timed("1b") { puts "Part 1b: #{part1b(input, y: 2_000_000)}" }
+timed("2ex") { puts "Part 2 (Example): #{part2(example, distress_limit: 20)}" }
+timed("2") { puts "Part 2: #{part2(input, distress_limit: 4_000_000)}" }

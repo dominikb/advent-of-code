@@ -2,6 +2,7 @@ require_relative 'StringExtensions'
 require_relative 'EnumerableExtensions'
 require_relative 'RangeExtensions'
 require_relative 'ArrayExtensions'
+require_relative 'SparseRange'
 
 require 'net/http'
 require 'tmpdir'
@@ -69,4 +70,11 @@ module Aoc
   class << self
     include Aoc
   end
+end
+
+def timed(title = '')
+  start = Time.now
+  yield
+  stop = Time.now
+  puts("[#{title}: #{stop - start}s]")
 end
