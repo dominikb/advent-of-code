@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'parallel'
 require_relative '../../../utils/ruby/Aoc'
 
 input = Aoc.get_input(year: 2022, day: 16)
@@ -64,67 +65,62 @@ def part1(input)
   puts "Size: #{non_zero}"
   permutations = non_zero.permutation([non_zero.size, permutation_limit].min)
 
-  highest = [0, []]
-  semaphore = Mutex.new
+  overall_highest = [0, []]
+  overall_semaphore = Mutex.new
   t_start = 30
   i = 0
   max = permutations.size
 
   # require 'parallel'
-  # sliceSlice = max / Parallel.processor_count
-  # slices = (0..9).map do |n|
-  #   permutations.lazy.drop(sliceSlice * n).take(sliceSlice)
-  # end
-  # return slices.map(&:inspect).join("\n")
-  # Parallel.each(slices) do |_path|
-  #   i += 1
-  #   puts "progress #{(i / max.to_f).round(5)} [#{i}|#{max}]" if i.modulo(1_000_000) == 0
-  #   dist = 0
-  #   value = 0
-  #   path = _path.to_a.unshift(start)
-  #   for from, to in path.each_cons(2)
-  #     dist += sp[from][to] + 1
-  #     break if dist < 0
-  #     activated_at = t_start - dist
-  #     value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0)
-  #   end
-  #
-  #   if value > highest[0]
-  #     semaphore.synchronize do
-  #       if value > highest[0]
-  #         highest = [value, dist, path.dup]
-  #         puts "New highest: #{highest.inspect}"
-  #       end
-  #     end
-  #   end
-  # end
-  #
-  # return highest
+  wrap = Class.new do
+    attr_reader :source
 
-  for path in permutations
-    i += 1
-    puts "progress #{(i / max.to_f).round(5)} [#{i}|#{max}]" if i.modulo(1_000_000) == 0
-    dist = 0
-    value = 0
-    path.unshift(start)
-    for from, to in path.each_cons(2)
-      dist += sp[from][to] + 1
-      break if dist < 0
-      activated_at = t_start - dist
-      value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0)
+    def lock = Mutex.new
+    def batch_size = 1_000_000
+
+    def initialize(source)
+      @source = source
     end
 
-    if value > highest[0]
-      semaphore.synchronize do
-        if value > highest[0]
-          highest = [value, dist, path.dup]
-          puts "New highest: #{highest.inspect}"
-        end
+    def next
+      lock.synchronize do
+        source.take(batch_size).to_a
       end
     end
+
+    def [](v)
+      source.drop(v * batch_size).take(batch_size)
+    end
+
+    def to_a
+      (0..source.size/batch_size).to_a
+    end
+  end.new(permutations)
+
+  top = Parallel.map(wrap) do |n|
+    highest = [0, []]
+    for path in wrap[n]
+      # i += 1
+      # puts "progress #{(i / max.to_f).round(5)} [#{i}|#{max}]" if i.modulo(1_000_000) == 0
+      dist = 0
+      value = 0
+      path.unshift(start)
+      for from, to in path.each_cons(2)
+        dist += sp[from][to] + 1
+        break if dist < 0
+        activated_at = t_start - dist
+        value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0)
+      end
+
+      if value > highest[0]
+        highest = [value, dist, path.dup]
+        puts "New highest: #{highest.inspect}"
+      end
+    end
+    highest
   end
 
-  return highest
+  top.max_by(&:first)
 end
 
 def part2(input) end
