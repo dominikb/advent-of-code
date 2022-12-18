@@ -65,62 +65,50 @@ def part1(input)
   puts "Size: #{non_zero}"
   permutations = non_zero.permutation([non_zero.size, permutation_limit].min)
 
-  overall_highest = [0, []]
-  overall_semaphore = Mutex.new
   t_start = 30
-  i = 0
-  max = permutations.size
 
-  # require 'parallel'
-  wrap = Class.new do
-    attr_reader :source
+  sliceSize = permutations.size / 10
+  slices = (0..9).map { permutations.lazy.drop(_1 * sliceSize).take(sliceSize) }
 
-    def lock = Mutex.new
-    def batch_size = 1_000_000
+  begin
+    File.delete(__dir__ + '/results.txt')
+  rescue
+  end
+  children = slices.map do |slice|
+    Process.fork do
+      highest = [0, []]
+      for path in slice
+        dist = 0
+        value = 0
+        path.unshift(start)
+        for from, to in path.each_cons(2)
+          dist += sp[from][to] + 1
+          break if dist < 0
+          activated_at = t_start - dist
+          value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0) # Avoid underflow
+        end
 
-    def initialize(source)
-      @source = source
-    end
-
-    def next
-      lock.synchronize do
-        source.take(batch_size).to_a
+        if value > highest[0]
+          highest = [value, dist, path.dup]
+          puts "New highest [#{Process.pid}]: #{highest.inspect}"
+        end
+      end
+      highest
+      File.open(__dir__ + '/results.txt', 'a') do |file|
+        file << highest.inspect
+        file << "\n"
       end
     end
+  end
+  Process.waitall
+  puts File.read(__dir__ + '/results.txt')
 
-    def [](v)
-      source.drop(v * batch_size).take(batch_size)
-    end
-
-    def to_a
-      (0..source.size/batch_size).to_a
-    end
-  end.new(permutations)
-
-  top = Parallel.map(wrap) do |n|
-    highest = [0, []]
-    for path in wrap[n]
-      # i += 1
-      # puts "progress #{(i / max.to_f).round(5)} [#{i}|#{max}]" if i.modulo(1_000_000) == 0
-      dist = 0
-      value = 0
-      path.unshift(start)
-      for from, to in path.each_cons(2)
-        dist += sp[from][to] + 1
-        break if dist < 0
-        activated_at = t_start - dist
-        value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0)
-      end
-
-      if value > highest[0]
-        highest = [value, dist, path.dup]
-        puts "New highest: #{highest.inspect}"
-      end
-    end
-    highest
+  Signal.trap('INT') do |signo|
+    puts Signal.signame(signo)
+    children.each { Process.kill('INT', _1) }
   end
 
-  top.max_by(&:first)
+  File.readlines(__dir__ + '/results.txt').map { eval(_1) }.max_by(&:first)
 end
 
 def part2(input) end
