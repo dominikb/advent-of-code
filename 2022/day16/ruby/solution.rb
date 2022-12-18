@@ -55,6 +55,8 @@ def shortest_paths(rooms)
   paths
 end
 
+OUTPUT_FILE = __dir__ + '/results.txt'
+
 def part1(input)
   rooms = input.map { parse(_1) }.index_by { _1[:room] }
   sp = shortest_paths(rooms)
@@ -71,7 +73,7 @@ def part1(input)
   slices = (0..9).map { permutations.lazy.drop(_1 * sliceSize).take(sliceSize) }
 
   begin
-    File.delete(__dir__ + '/results.txt')
+    File.delete(OUTPUT_FILE)
   rescue
   end
   children = slices.map do |slice|
@@ -94,26 +96,152 @@ def part1(input)
         end
       end
       highest
-      File.open(__dir__ + '/results.txt', 'a') do |file|
+      File.open(OUTPUT_FILE, 'a') do |file|
         file << highest.inspect
         file << "\n"
       end
     end
   end
   Process.waitall
-  puts File.read(__dir__ + '/results.txt')
+  puts File.read(OUTPUT_FILE)
 
   Signal.trap('INT') do |signo|
     puts Signal.signame(signo)
     children.each { Process.kill('INT', _1) }
   end
 
-  File.readlines(__dir__ + '/results.txt').map { eval(_1) }.max_by(&:first)
+  File.readlines(OUTPUT_FILE).map { eval(_1) }.max_by(&:first)
 end
 
-def part2(input) end
+# Part 2: [1774, {"AR"=>6, "EJ"=>9, "OW"=>15, "VR"=>8, "AH"=>11, "HZ"=>14}]
+# [2: 5.05751s]
+def part2(input)
+  rooms = input.map { parse(_1) }.index_by { _1[:room] }
+  sp = shortest_paths(rooms)
+  start = "AA"
+  permutation_limit = 5
 
-puts "Part 1 (Example): #{part1(example)}"
-timed("1") { puts "Part 1: #{part1(input)}" }
-# timed("2ex") { puts "Part 2 (Example): #{part2(example)}" }
-# timed("2") { puts "Part 2: #{part2(input)}" }
+  non_zero = rooms.values.filter_map { _1[:flow_rate].zero? ? nil : _1[:room] }
+  puts "Size: #{non_zero}"
+  permutations = non_zero.permutation([non_zero.size, permutation_limit].min)
+
+  t_start = 26
+
+  sliceSize = permutations.size / 10
+  slices = (0..9).map { permutations.lazy.drop(_1 * sliceSize).take(sliceSize) }
+  # slices = [
+  #   [[%w(JJ BB CC),
+  #     %w(DD HH EE)]]
+  # ]
+
+  begin
+    File.delete(OUTPUT_FILE)
+    FileUtils.touch(OUTPUT_FILE)
+  rescue
+  end
+  children = slices.map do |slice|
+    Process.fork do
+      highest = [0, []]
+      for elephant_path in slice.drop(slice.size / 2)
+        for my_path in slice.take(slice.size / 2)
+          my_path_dist = [[my_path.first, sp[start][my_path.first]]]
+          my_path.drop(1).each do |cur|
+            prev, acc_dist = my_path_dist.last
+            my_path_dist << [cur, sp[cur][prev] + acc_dist + 1]
+          end
+          elephant_path_dist = [[elephant_path.first, sp[start][elephant_path.first]]]
+          elephant_path.drop(1).each do |cur|
+            prev, acc_dist = elephant_path_dist.last
+            elephant_path_dist << [cur, sp[cur][prev] + acc_dist + 1]
+          end
+          path = my_path_dist.to_h
+          elephant_path_dist.each do |k, v|
+            prev_v = path[k]
+            if prev_v.nil? || prev_v > v
+              path[k] = v
+            end
+            # next path[k] = v if !path.key?(k)
+            # path[k] = v if path.fetch(k, -1) < v
+          end
+
+          value = path.sum do |room, delta_t|
+            rooms[room][:flow_rate] * (t_start - delta_t - 1)
+          end
+          # dist = 0
+          # value = 0
+          # path.unshift(start)
+          # for from, to in path.each_cons(2)
+          #   dist += sp[from][to] + 1
+          #   break if dist < 0
+          #   activated_at = t_start - dist
+          #   value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0) # Avoid underflow
+          # end
+
+          if value > highest[0]
+            highest = [value, path.dup]
+            puts "New highest [#{Process.pid}]: #{highest.inspect}"
+          end
+        end
+      end
+
+      for elephant_path in slice.take(slice.size / 2)
+        for my_path in slice.drop(slice.size / 2)
+          my_path_dist = [[my_path.first, sp[start][my_path.first]]]
+          my_path.drop(1).each do |cur|
+            prev, acc_dist = my_path_dist.last
+            my_path_dist << [cur, sp[cur][prev] + acc_dist + 1]
+          end
+          elephant_path_dist = [[elephant_path.first, sp[start][elephant_path.first]]]
+          elephant_path.drop(1).each do |cur|
+            prev, acc_dist = elephant_path_dist.last
+            elephant_path_dist << [cur, sp[cur][prev] + acc_dist + 1]
+          end
+          path = my_path_dist.to_h
+          elephant_path_dist.each do |k, v|
+            prev_v = path[k]
+            if prev_v.nil? || prev_v > v
+              path[k] = v
+            end
+            # next path[k] = v if !path.key?(k)
+            # path[k] = v if path.fetch(k, -1) < v
+          end
+
+          value = path.sum do |room, delta_t|
+            rooms[room][:flow_rate] * (t_start - delta_t - 1)
+          end
+          # dist = 0
+          # value = 0
+          # path.unshift(start)
+          # for from, to in path.each_cons(2)
+          #   dist += sp[from][to] + 1
+          #   break if dist < 0
+          #   activated_at = t_start - dist
+          #   value += rooms[to][:flow_rate] * (activated_at > 0 ? activated_at : 0) # Avoid underflow
+          # end
+
+          if value > highest[0]
+            highest = [value, path.dup]
+            puts "New highest [#{Process.pid}]: #{highest.inspect}"
+          end
+        end
+      end
+      File.open(OUTPUT_FILE, 'a') do |file|
+        file << highest.inspect
+        file << "\n"
+      end
+    end
+  end
+  Process.waitall
+
+  Signal.trap('INT') do |signo|
+    puts Signal.signame(signo)
+    children.each { Process.kill('INT', _1) }
+  end
+
+  File.readlines(OUTPUT_FILE).map { eval(_1) }.max_by(&:first)
+end
+
+# puts "Part 1 (Example): #{part1(example)}"
+# timed("1") { puts "Part 1: #{part1(input)}" }
+timed("2ex") { puts "Part 2 (Example): #{part2(example)}" }
+timed("2") { puts "Part 2: #{part2(input)}" }
