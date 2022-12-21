@@ -43,26 +43,26 @@ end
 #
 # If the bubble goes out of bounds in any direction we return an empty array.
 def fill_air_bubble(coords, origin, xrange, yrange, zrange)
-  visited = []
-  to_check = [origin]
+  to_check = Set.new([origin])
+  visited = {}
 
   while to_check.not_empty?
-    x,y,z = to_check.shift
+    x,y,z = point = to_check.first
+    to_check.delete(point)
 
-    visited << [x,y,z]
+    visited[[x,y,z]] = 1
 
     neighbours = [
       [x - 1, y, z], [x + 1, y, z],
       [x, y - 1, z], [x, y + 1, z],
       [x, y, z - 1], [x, y, z + 1],
     ].each do |n|
-      return [] unless xrange.include?(x) && yrange.include?(y) && zrange.include?(z)
-      to_check << n unless coords.key?(n)
+      return [:no_bubble, visited.keys] unless xrange.include?(x) && yrange.include?(y) && zrange.include?(z)
+      to_check << n unless visited.key?(n) || coords.key?(n)
     end
-    to_check << [x - 1, y, z] unless coords.key?([x - 1, y, z])
   end
 
-  visited
+  [:air_bubble, visited.keys]
 end
 
 def part2(input)
@@ -84,9 +84,14 @@ def part2(input)
     end
   end
 
-  bubbles = potential_air_bubbles.flat_map do |origin|
-    fill_air_bubble(coords, origin, xmin..xmax, ymin..ymax, zmin..zmax)
+  checked = {}
+  potential_air_bubbles.each.with_index do |origin, idx|
+    next if checked.key?(origin)
+
+    result, visited = fill_air_bubble(coords, origin, xmin..xmax, ymin..ymax, zmin..zmax)
+    visited.each { checked[[_1, _2, _3]] = (result == :air_bubble) }
   end
+  bubbles = checked.filter { _2 == true }.keys
 
   (input.map(&:integers) + bubbles)
     .flat_map { sides(_1, _2, _3) }
