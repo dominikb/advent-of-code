@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Enumerable
+  def not_empty?
+    !empty?
+  end
+
   # File activesupport/lib/active_support/core_ext/enumerable.rb, line 103
   def index_by
     if block_given?
