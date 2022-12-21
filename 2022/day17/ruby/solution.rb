@@ -26,7 +26,7 @@ def create_rocks_producer
 end
 
 def collision?(chamber, rock)
-  return rock.any? do |x,y|
+  return rock.any? do |x, y|
     row = chamber[y]
     !row.nil? && row[x] != '.'
   end
@@ -123,7 +123,7 @@ def part1(input)
       # Moving 1 left always works
       in '<<>' | '<><' | '><<' then path.map { |x, y| [x - 1, y + tallest + 1] }
       in e
-        puts({e:, slice: jets2[jet_idx..jet_idx + 2], jet_idx:, jets:, jets_size: jets.size, jets2:}.inspect)
+        puts({ e:, slice: jets2[jet_idx..jet_idx + 2], jet_idx:, jets:, jets_size: jets.size, jets2: }.inspect)
         raise "bad pattern for #{e}"
       end
     jet_idx = (jet_idx + 3) % jets.size
@@ -132,7 +132,7 @@ def part1(input)
     # Falling
     loop do
       case jets[jet_idx]
-      # in '>' then next_pos = move(rock, 1, 0)
+        # in '>' then next_pos = move(rock, 1, 0)
       in '>' then next_pos = right(rock)
       # in '<' then next_pos = move(rock, -1, 0)
       in '<' then next_pos = left(rock)
@@ -164,48 +164,31 @@ end
 
 def part2(input)
   jets = input.first
-  jets2 = jets + jets
   rock_count = 0
-  chamber = Hash.new { _1[_2] = %w[. . . . . . .] }
+  rock_limit = 1000000000000
+  # rock_limit = 2022
+  chamber = {}
   chamber[0] = [['_'] * 7]
   rocks_producer = create_rocks_producer
   jet_idx = 0
   total_pruned = 0
 
-  while rock_count < 2022
-    tallest = chamber.keys.max
-    # rock = rocks_producer.next.map { |x, y| [x, y + tallest + 4] }
+  states = {}
+  cycle_found = false
 
-    # We always start 3 lines above the tallest one. Thus we can move down and left/right 3 times at least
+  while rock_count < rock_limit
+    tallest = chamber.keys.max
+
     type, path = rocks_producer.next
-    rock =
-      case jets2[jet_idx..jet_idx + 2]
-      in '>>>'
-        max_x_movement =
-          case type
-          in :line then 1
-          in :plus | :l then 2
-          else 3
-          end
-        path.map { |x, y| [x + max_x_movement, y + tallest + 1] }
-        # Moving 1 right always works
-      in '>><' | '><>' | '<>>' then path.map { |x, y| [x + 1, y + tallest + 1] }
-      # Can move 2 left at max anyway
-      in '<<<' then path.map { |x, y| [x - 2, y + tallest + 1] }
-      # Moving 1 left always works
-      in '<<>' | '<><' | '><<' then path.map { |x, y| [x - 1, y + tallest + 1] }
-      in e then raise "bad pattern for #{e}"
-      end
-    jet_idx = (jet_idx + 3) % jets.size
-    # rock = rocks_producer.next.map { [_1, _2 + tallest + 4] }
+    rock = path.map { [_1, _2 + tallest + 4] }
 
     # Falling
     loop do
-      case jets[jet_idx % jets.size]
+      case jets[jet_idx]
       in '>' then next_pos = right(rock)
       in '<' then next_pos = left(rock)
       end
-      jet_idx += 1
+      jet_idx = (jet_idx + 1) % jets.size
       unless out_of_bounds?(next_pos) || collision?(chamber, next_pos)
         rock = next_pos
       end
@@ -215,18 +198,38 @@ def part2(input)
     end
 
     # Place rock
-    rock.each { |x, y| chamber[y][x] = '#' }
+    rock.each do |x, y|
+      if chamber[y].nil?
+        chamber[y] = %w(. . . . . . .)
+      end
+      chamber[y][x] = '#'
+    end
     rock_count += 1
 
     # Prune regularily
     pruned = prune!(chamber)
     total_pruned += pruned
-    # print_chamber(chamber)
+
+    if !cycle_found && states[[type, jet_idx, chamber]]
+      cycle_found = true
+      rocks_fallen_since = rock_count - states[[type, jet_idx, chamber]][:rock_count]
+      pruned_rows_since = total_pruned - states[[type, jet_idx, chamber]][:total_pruned]
+      # "prune" up to the max repetitions
+
+      repetitions_possible = (rock_limit - rock_count) / rocks_fallen_since
+
+      rocks_to_add = rocks_fallen_since * repetitions_possible
+      new_pruned_to_add = pruned_rows_since * repetitions_possible
+
+      rock_count += rocks_to_add
+      total_pruned += new_pruned_to_add
+    end
+    states[[type, jet_idx, chamber]] = { rock_count:, total_pruned: }
   end
   chamber.keys.max + total_pruned
 end
 
 timed("1 Example") { puts "Part 1 (Example): #{part1(example)}" }
-# timed("1") { puts "Part 1: #{part1(input)}" }
-# timed("2ex") { puts "Part 2 (Example): #{part2(example)}" }
-# timed("2") { puts "Part 2: #{part2(input)}" }
+timed("1") { puts "Part 1: #{part1(input)}" }
+timed("2ex") { puts "Part 2 (Example): #{part2(example)}" }
+timed("2") { puts "Part 2: #{part2(input)}" }
