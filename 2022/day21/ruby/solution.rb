@@ -58,41 +58,6 @@ def part1(input)
   yelling['root']
 end
 
-def solve_with(humn, monkeys, yelling, root_monkey)
-  yelling['humn'] = humn
-  while monkeys.size > 0
-    monkeys.delete_if do |name, op, (a, b)|
-      a_num = yelling[a]
-      b_num = yelling[b]
-      if a_num && b_num
-        yelling[name] =
-          case op
-          in '+' then a_num + b_num
-          in '-' then a_num - b_num
-          in '*' then a_num * b_num
-          in '/' then a_num / b_num
-          end
-        true
-      end
-    end
-  end
-
-  _, _, (a, b) = root_monkey
-  [yelling[a] == yelling[b], yelling[a], yelling[b]]
-end
-
-def eval_eq(eq)
-  case eq.tr('()', '').split(' ')
-  in a, '*', humn, '-', b if humn[-4..] == 'humn'
-    a = a.to_i; b = b.to_i
-    "(#{humn.integers.empty? ? a : humn.integers * a}humn - #{a * b})"
-  in a, '*', humn, '+', b if humn[-4..] == 'humn'
-    a = a.to_i; b = b.to_i
-    "(#{humn.integers.empty? ? a : humn.integers * a}humn + #{a * b})"
-  in eq then raise "Unmatched '#{eq}'"
-  end
-end
-
 def part2(input)
   monkeys = input.map { parse_monkey(_1) }
 
@@ -107,51 +72,24 @@ def part2(input)
       true
     end
   end
-  # Solve as far as possible without using human
-  changed = true
-  while changed
-    changed = false
-    monkeys.delete_if do |name, op, (a, b)|
-      a_num = yelling[a]
-      b_num = yelling[b]
-      if a_num && b_num && a != 'humn' && b != 'humn'
-        changed = true
-        yelling[name] =
-          case op
-          in '+' then a_num + b_num
-          in '-' then a_num - b_num
-          in '*' then a_num * b_num
-          in '/' then a_num / b_num
-          end
-        true
-      end
-    end
-  end
 
   # Collapse to formula
-  formula = ''
   yelling['humn'] = 'humn'
   while monkeys.size > 1
     monkeys.delete_if do |name, op, (a, b)|
       if yelling.key?(a) && yelling.key?(b) && name != 'root'
-        yelling[name] = T.from(yelling[a]).apply(op, T.from(yelling['b']))
-        yelling[name] = "(} #{op} #{yelling[b]})"
+        yelling[name] = "(#{yelling[a]} #{op} #{yelling[b]})"
         true
       end
     end
   end
 
   _name, _val, (a, b) = root_monkey
-  puts yelling[a].inspect
-  puts yelling[b].inspect
-
-  # (0..).each do |humn|
-  #   solution = solve_with(humn, monkeys.dup, yelling.dup, root_monkey)
-  #   if solution.first
-  #     puts solution.inspect
-  #     return humn
-  #   end
-  # end
+  equ = "#{yelling[a]} - #{yelling[b]}"
+  python = IO.popen(
+    "python3 #{__dir__}/eval_expr.py \"#{equ}\""
+  )
+  python.gets
 end
 
 puts "Part 1 (Example): #{part1(example)}"
