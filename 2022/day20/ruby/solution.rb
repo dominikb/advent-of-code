@@ -13,80 +13,89 @@ EXAMPLE
 example = example.split("\n").map(&:strip)
 
 class Item
-  attr_reader :val, :position
+  include Comparable
+  attr_accessor :v, :original_index
 
-  def initialize(val, original_position, max_len)
-    @val = val
-    @original_position = original_position
-    @position = original_position
-    @max_len = max_len
+  def initialize(v, index)
+    @v = v
+    @original_index = index
   end
 
-  def move
-    @position = @original_position + @val
-    while @position < 0
-      @position += @max_len
-    end
-    while @position > @max_len
-      @position -= @max_len
-    end
-    self
+  def inspect
+    "Item(v=#{v},idx=#{original_index})"
   end
 
   def <=>(other)
-    @position - other.position
+    @v <=> other.v if other.is_a? Item
+    @v <=> other
   end
-
-  def to_s
-    "Item(#{@position},#{@val})"
-  end
-  def inspect = to_s
 end
 
-def to_list(numbers, movements)
-  max = numbers.size
-  numbers.map.with_index do |v, idx|
-    new_idx = idx + movements[idx][0]
-    while new_idx < 0
-      new_idx += max
+##
+# Given an index
+# The new index for the given item is index + value
+# 5 cases:
+# value < 0 and index + value >= 0    => use index + value
+# value < 0 and index + value < 0     => index' = max + index + value # positive change = index' - index
+# value = 0                           => unchanged
+# value > 0 and index + value <= max  => use index + value
+# value > 0 and index + value > max   => index' = index + value - max # negative change = index' - index
+def move(list, index)
+  value = list[index].v
+  max = list.size - 1
+
+  case (index + value)
+  in new_index if value < 0 && index + value >= 0
+    move_item(list, index, new_index)
+  in new_index if value < 0 && index + value < 0
+    while new_index < 0
+      new_index += max
     end
-    while new_idx > max
-      new_idx -= max
-    end
-    [new_idx, v]
-  end.sort_by(&:first).map(&:second)
+    move_item(list, index, new_index)
+  in new_index if new_index == index then list
+  in new_index if value > 0 && index + value <= max
+    move_item(list, index, new_index)
+  in new_index if value > 0 && index + value > max
+    loops = new_index / list.size
+    move_item(list, index, loops + new_index % list.size)
+  in v then raise "Unmatched new_index: #{v}, index: #{index}, value: #{value}"
+  end
 end
+
+def move_item(list, from, to)
+  if from < to
+    list[0...from] + list[from+1..to] + list[from..from] + list[to+1..]
+  else
+    list[0...to] + list[from..from] + list[to...from] + list[from+1..]
+  end
+end
+
+def nth_after(numbers, nth, value = 0)
+  idx = numbers.find_index { _1.v == value }
+  numbers[(idx + nth) % numbers.size]
+end
+
+# example = "[-3,1,0]"
+# numbers = eval(example).map.with_index { Item.new(_1, _2) }
+# puts numbers.map(&:v).inspect
+# puts move2(numbers, 0).map(&:v).inspect
+# return
 
 def part1(input)
-  numbers = input.map(&:to_i)
-  # Hash of tuples(movements, original_idx, value)
-  movements = Hash.new { _1[_2] = [0, _2, numbers[_2]] }
-  max = input.size
-  numbers.each_with_index do |v, i|
-    puts "Moving #{v}"
-    before = to_list(numbers, movements)
-    movements[i][0] += v
-    case v
-    in 0 then next
-    in _ if v > 0
-      (i+1..i+v).each { movements[_1][0] -= 1 }
-      (0...i+v-max).each { movements[_1][0] -= 1}
-    in _ if v < 0 && v.abs > i
-      (0...i).each { movements[_1][0] += 1 }
-      (i+v+max..max).each { movements[_1][0] += 1}
-    in _ if v < 0 && v.abs < i
-      (i-v...i).each { movements[_1][0] += 1 }
-    end
-    after = to_list(numbers, movements)
-    puts "After #{i + 1}: #{before} => #{after}"
+  numbers = input.map(&:to_i).map.with_index { Item.new(_1, _2) }
+  (0..numbers.size - 1).each do |index|
+    # puts numbers.map(&:v).inspect
+    numbers = move(numbers, numbers.find_index { _1.original_index == index })
   end
-  to_list(numbers, movements)
+  # puts numbers.map(&:v).inspect
+  nth_after(numbers, 1000).v +
+    nth_after(numbers, 2000).v +
+    nth_after(numbers, 3000).v
 end
 
-def part2(input)
-end
+def part2(input) end
 
 puts "Part 1 (Example): #{part1(example)}"
-# puts "Part 1: #{part1(input)}"
+puts "Part 1: #{part1(input)}"
 # puts "Part 2 (Example): #{part2(example)}"
 # puts "Part 2: #{part2(input)}"
