@@ -3,6 +3,7 @@ require_relative 'EnumerableExtensions'
 require_relative 'RangeExtensions'
 require_relative 'ArrayExtensions'
 require_relative 'SparseRange'
+require_relative 'Utils'
 
 require 'net/http'
 require 'tmpdir'
@@ -64,7 +65,10 @@ module Aoc
   end
 
   def cache_path(year, day)
-    "#{year}/day#{day.to_s.rjust(2, '0')}/input.txt"
+    cache_dir = "#{__dir__}/../../#{year}/day#{day.to_s.rjust(2, '0')}"
+    Dir.mkdir(cache_dir) unless File.directory?(cache_dir)
+
+    "#{cache_dir}/input.txt"
   end
 
   class << self
