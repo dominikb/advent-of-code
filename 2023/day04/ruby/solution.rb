@@ -19,24 +19,19 @@ def parse(line)
         numbers.scan(/\d+/).map(&:to_i)
     end
 
-    [id, numbers]
+    [id, numbers.reduce(&:intersection).size]
 end
 
 def part1(input)
     input
     .map { |line| parse(line) }
-    .map(&:last) # Ignore ids
-    .map { _1 & _2 }
-    .reject(&:empty?)
-    .map(&:size)
-    .map { 2 ** (_1 - 1) }
-    .sum
+    .sum { |_id, wins| wins > 0 ? 2**(wins - 1) : 0 }
 end
 
 def part2(input)
     cards = input
     .map { |line| parse(line) }
-    .map { |id, numbers| [id, 1, numbers.reduce(&:intersection).size] }
+    .map { |id, wins| [id, 1, wins] }
 
     (0...cards.size).each do |i|
         (id, count_in_deck, points) = cards[i]
