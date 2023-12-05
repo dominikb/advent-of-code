@@ -5,9 +5,13 @@ class SparseRange
     @min_indexed = Hash.new
   end
 
-  def ranges = @min_indexed.values
+  def ranges
+    @min_indexed.values
+  end
 
-  def gap? = @min_indexed.size > 1
+  def gap?
+    @min_indexed.size > 1
+  end
 
   def gap
     gap = SparseRange.new
