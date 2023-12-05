@@ -57,16 +57,20 @@ class Mapping
     end
 
     def covers?(element)
-         transform(element) != nil
+        element.id >= src_start && element.id < src_end
     end
 
     def transform(element)
-        if element.id >= src_start && element.id <= src_end
+        if covers?(element)
             offset = element.id - src_start
             Category.new(to, dest_start + offset)
         else
             nil
         end
+    end
+
+    def reverse
+        Mapping.new(to, from, src_start, dest_start, length)
     end
 end
 
@@ -80,9 +84,6 @@ def parse_mapping(mapping_str)
     end
 end
 
-# puts Mapping.new(:seed, :soil, 52, 50, 48).transform(Category.new(:seed, 79))
-# return
-
 def parse(input)
     seeds, *mappings = input.join("\n").split("\n\n")
 
@@ -93,7 +94,7 @@ def parse(input)
         .group_by { _1.from }
         .transform_values do |mappings|
             from, to = mappings.first.from, mappings.first.to
-            default_mapping = Mapping.new(from, to, 0, 0, 10**1000)
+            default_mapping = Mapping.new(from, to, 0, 0, Float::INFINITY)
             [*mappings, default_mapping]
         end
         .to_h
@@ -107,7 +108,6 @@ def part1(input)
     locations = seeds.map do |seed|
         while seed.name != :location
             mapper = mappings[seed.name].find { _1.covers?(seed) }
-            # puts "#{seed.name} -> #{mapper.to}: #{seed.id} -> #{mapper.transform(seed).id}"
             seed = mapper.transform(seed)
         end
         seed
@@ -117,29 +117,32 @@ def part1(input)
 end
 
 def part2(input)
-    # seeds, mappings = parse(input)
+    seeds, mappings = parse(input)
 
-    # seeds = seeds.each_slice(2).flat_map do |seed, next_seed|
-    #     next_seed.id.times.map do |i|
-    #         Category.new(seed.name, seed.id + i)
-    #     end
-    # end
+    all_seeds = seeds.each_slice(2).reduce(SparseRange.new) do |acc, slice|
+        seed, next_seed = slice
+        acc.add(seed.id...(seed.id + next_seed.id))
+        acc
+    end
 
-    # return seeds.map(&:id).size
+    reverse_mappings = mappings.values.flatten.map(&:reverse).group_by(&:from).each do |from, mappings|
+        [from, mappings]
+    end.to_h
 
-    # locations = seeds.map do |seed|
-    #     while seed.name != :location
-    #         mapper = mappings[seed.name].find { _1.covers?(seed) }
-    #         # puts "#{seed.name} -> #{mapper.to}: #{seed.id} -> #{mapper.transform(seed).id}"
-    #         seed = mapper.transform(seed)
-    #     end
-    #     seed
-    # end
+    (0..).lazy.map { Category.new(:location, _1) }.each do |current|
+        location_id = current.id
+        while current.name != :seed
+            mapper = reverse_mappings[current.name].find { _1.covers?(current) }
+            current = mapper.transform(current)
+        end
 
-    # locations.map { _1.id }.sort.first
+        if all_seeds.cover?(current.id)
+            return location_id
+        end
+    end
 end
 
 puts "Part 1 (Example): #{part1(example)}"
 puts "Part 1: #{part1(input)}"
-# puts "Part 2 (Example): #{part2(example)}"
-# puts "Part 2: #{part2(input)}"
+puts "Part 2 (Example): #{part2(example)}"
+puts "Part 2: #{part2(input)}"

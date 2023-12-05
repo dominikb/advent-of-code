@@ -28,11 +28,11 @@ class SparseRange
   end
 
   def size
-    @min_indexed.values.map(&:size).sum
+    ranges.map(&:size).sum
   end
 
   def cover?(value)
-    @min_indexed.values.any? { _1.cover?(value) }
+    ranges.any? { _1.cover?(value) }
   end
 
   def add(range)
