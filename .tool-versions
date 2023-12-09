@@ -1,1 +1,2 @@
-ruby truffleruby-22.3.1
+ruby 3.2.2
+clojure 1.11.1.1413

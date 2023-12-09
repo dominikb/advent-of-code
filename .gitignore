@@ -2,3 +2,7 @@ AOC_SESSION.txt
 .idea
 advent.log
 **/*/input.txt
+.nrepl-port
+.lsp
+.calva
+.clj-kondo
