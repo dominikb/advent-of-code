@@ -21,21 +21,30 @@ EXAMPLE
 
 example = example.split("\n\n").map { _1.split("\n").map(&:strip) }
 
-def verify(mirror_index, input)
+def distance(a, b)
+    a.chars.zip(b.chars).count { _1 != _2 }
+end
+
+ALLOWED_DISTANCE = 0
+
+def verify(mirror_index, input, prev_distance = 0)
+    total_distance = prev_distance
     (0..mirror_index).each do |i|
         a = mirror_index - i
         b = mirror_index + i + 1
         
         return true if a < 0 || b >= input.length
-        return false unless input[a] == input[b]
+        total_distance += distance(input[a], input[b])
+        return false if total_distance > ALLOWED_DISTANCE
     end
-    true
+    total_distance <= ALLOWED_DISTANCE
 end
 
 def horizontal(input)
-    (0..(input.length - 1)).each do |i|
-        if input[i] == input[i + 1]
-            return i + 1 if verify(i, input)
+    (0..(input.length - 2)).each do |i|
+        d = distance(input[i], input[i + 1])
+        if d <= ALLOWED_DISTANCE
+            return i + 1 if verify(i, input, d)
         end
     end
     nil
