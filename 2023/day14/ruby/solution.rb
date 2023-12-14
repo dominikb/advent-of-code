@@ -26,12 +26,9 @@ def rotate(grid, direction, reverse: false)
 end
 
 def shift(column)
-    column.chunk { _1 == '#' }.map do |is_square_rock, col_parts|
-        next col_parts if is_square_rock
-        rocks = col_parts.count('O')
-
-        ['O'] * rocks + ['.'] * (col_parts.length - rocks)
-    end.flatten
+    column.chunk { _1 == '#' }.flat_map do |_, rocks|
+        rocks.sort!.reverse!
+    end
 end
 
 def tilt(direction, grid)
