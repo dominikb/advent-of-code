@@ -7,8 +7,6 @@ advent.log
 .calva
 .clj-kondo
 .metals
-
-
 .vscode
 .DS_STORE
 _build

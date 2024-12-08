@@ -1,6 +1,8 @@
+YEAR = ___YEAR___
+DAY = ___DAY___
 require_relative '../../../utils/ruby/Aoc'
 
-input = Aoc.get_input(year: 2023, day: 4)
+input = Aoc.get_input(year: YEAR, day: DAY)
 example = <<~EXAMPLE
 EXAMPLE
 
